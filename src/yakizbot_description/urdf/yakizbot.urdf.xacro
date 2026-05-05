@@ -1,0 +1,183 @@
+<?xml version="1.0"?>
+
+<!--
+  URDF/Xacro model for a 4WD mobile robot (yakizbot)
+
+  This file defines:
+  - Robot physical dimensions (base + wheels)
+  - Kinematic structure (links & joints)
+  - Inertial properties for simulation/real control
+  - IMU sensor mounting
+
+  The robot is a 4-wheel drive (4WD) skid-steer platform.
+-->
+
+<robot name="yakizbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ================= PARAMETERS ================= -->
+  <!-- Base dimensions -->
+  <xacro:property name="base_length"   value="0.40"/>   <!-- Length of robot base (X direction) -->
+  <xacro:property name="base_width"    value="0.295"/>  <!-- Width of robot base (Y direction) -->
+  <xacro:property name="base_height"   value="0.20"/>   <!-- Height of robot base (Z direction) -->
+
+  <!-- Wheel dimensions -->
+  <xacro:property name="wheel_radius"  value="0.0425"/> <!-- Wheel radius -->
+  <xacro:property name="wheel_width"   value="0.038"/>   <!-- Wheel thickness -->
+
+  <!-- Robot geometry -->
+  <xacro:property name="track"         value="0.28"/>   <!-- Distance between left and right wheels -->
+  <xacro:property name="wheelbase"     value="0.15"/>   <!-- Distance between front and rear wheels -->
+
+  <!-- ================= MATERIALS ================= -->
+  <!-- Colors used for visualization -->
+  <!-- ================= MATERIALS ================= -->
+  <!-- Blue -->
+  <material name="blue">
+    <color rgba="0 0 1 1"/>
+  </material>
+    <!-- black -->
+  <material name="black">
+    <color rgba="0 0 0 1"/>
+  </material>
+    <!-- silver -->
+  <material name="silver">
+    <color rgba="0.79 0.82 0.93 1"/>
+  </material>
+    <!-- dark_grey -->
+  <material name="dark_grey">
+    <color rgba="0.3 0.3 0.3 1"/>
+  </material>
+  <!-- ================= BASE FOOTPRINT ================= -->
+  <!-- Virtual frame projected on ground (used in navigation) -->
+  <link name="base_footprint"/>
+
+  <!-- Main robot body -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <!-- Rectangular chassis -->
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <material name="black"/>    
+    </visual>
+
+    <collision>
+      <!-- Same geometry used for collision detection -->
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <!-- Center of mass slightly above bottom -->
+      <origin xyz="0 0 0.04"/>
+      <mass value="3.0"/>
+      <!-- Approximate inertia tensor -->
+      <inertia ixx="0.05" ixy="0.0" ixz="0.0"
+               iyy="0.05" iyz="0.0"
+               izz="0.08"/>
+    </inertial>
+  </link>
+
+  <!-- Fixed joint between footprint and base -->
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <!-- Lift base so wheels touch ground -->
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================= WHEEL MACRO ================= -->
+  <!--
+    Macro to generate a wheel.
+
+    Parameters:
+    - name   : wheel name
+    - x_sign : +1 front, -1 rear
+    - y_sign : +1 left,  -1 right
+  -->
+  <xacro:macro name="wheel" params="name x_sign y_sign">
+
+    <!-- Wheel link -->
+    <link name="${name}_wheel">
+      <visual>
+        <geometry>
+          <!-- Cylindrical wheel -->
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <!-- Rotate so it spins around Y-axis -->
+        <origin rpy="${pi/2} 0 0"/>
+        <material name="blue"/>
+      </visual>
+
+      <collision>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <origin rpy="${pi/2} 0 0"/>
+      </collision>
+
+      <inertial>
+        <mass value="0.3"/>
+        <!-- Simplified inertia -->
+        <inertia ixx="0.001" ixy="0" ixz="0"
+                 iyy="0.001" iyz="0"
+                 izz="0.001"/>
+      </inertial>
+    </link>
+
+    <!-- Wheel joint (continuous rotation) -->
+    <joint name="${name}_wheel" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_wheel"/>
+
+      <!-- Position of wheel relative to base -->
+      <origin xyz="${x_sign * wheelbase/2}
+                   ${y_sign * track/2}
+                   ${-base_height/2}"
+              rpy="0 0 0"/>
+
+      <!-- Rotation axis (wheel spins around Y-axis) -->
+      <axis xyz="0 1 0"/>
+
+      <!-- Optional dynamics -->
+      <dynamics damping="0.01" friction="0.1"/>
+    </joint>
+
+  </xacro:macro>
+
+  <!-- ================= WHEELS ================= -->
+  <!-- Four wheels generated using macro -->
+  <xacro:wheel name="front_left"  x_sign=" 1" y_sign=" 1"/>
+  <xacro:wheel name="front_right" x_sign=" 1" y_sign="-1"/>
+  <xacro:wheel name="rear_left"   x_sign="-1" y_sign=" 1"/>
+  <xacro:wheel name="rear_right"  x_sign="-1" y_sign="-1"/>
+
+  <!-- ================= IMU ================= -->
+  <!-- Inertial Measurement Unit sensor -->
+  <link name="imu_link">
+    <visual>
+      <geometry>
+        <!-- Small box representing IMU -->
+        <box size="0.03 0.03 0.01"/>
+      </geometry>
+      <material name="silver"/>
+    </visual>
+
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0"
+               iyy="0.0001" iyz="0"
+               izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <!-- Fixed IMU on top of base -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 ${base_height/2}" rpy="0 0 0"/>
+  </joint>
+
+</robot>
+ 

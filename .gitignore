@@ -1,0 +1,42 @@
+/build/
+/install/
+/log/
+
+/libmicroros/
+/microros_static_library/
+/available_ros2_types/
+/built_packages/
+
+# Pico SDK (external dependency)
+/pico-sdk/
+
+# VS Code
+.vscode/
+
+# GitHub
+.github/
+
+# Ignore compiled/object files
+*.o
+*.obj
+*.elf
+*.bin
+*.exe
+
+# Ignore logs
+*.log
+
+# Ignore temporary/editor swap files
+*.swp
+*.tmp
+*~
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# CMake generated files/folders
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
