@@ -20,10 +20,10 @@ public:
         );
 
         joint_names_ = {
-            "front_left_wheel",
-            "front_right_wheel",
-            "rear_left_wheel",
-            "rear_right_wheel"
+            "front_left_wheel_joint",
+            "front_right_wheel_joint",
+            "rear_left_wheel_joint",
+            "rear_right_wheel_joint"
         };
 
         RCLCPP_INFO(this->get_logger(), "JointState Bridge Node Started");
@@ -42,6 +42,8 @@ private:
         sensor_msgs::msg::JointState joint_msg;
 
         joint_msg.header.stamp = this->now();
+        joint_msg.header.frame_id = "base_link";
+        
         joint_msg.name = joint_names_;
         joint_msg.position = {
             msg->data[0],

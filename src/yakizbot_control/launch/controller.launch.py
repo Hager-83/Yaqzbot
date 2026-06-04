@@ -65,12 +65,6 @@ def generate_launch_description():
         ]
     )
     
-    joint_state_publisher = Node(
-    package='joint_state_publisher',
-    executable='joint_state_publisher',
-    name='joint_state_publisher',
-    output='screen'
-)
 
     # ─────────────────────────────
     # ADD: Joint State Bridge (IMPORTANT)
@@ -104,7 +98,6 @@ def generate_launch_description():
         wheel_radius_arg,
         wheel_separation_arg,
         robot_state_publisher,
-        joint_state_publisher,
         joint_state_bridge,   
         simple_controller
     ])
