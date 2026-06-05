@@ -48,8 +48,8 @@ void SimpleController::jointStateCallback(
 
     double v_fl = msg.velocity[0];
     double v_rl = msg.velocity[1];
-    double v_fr = - msg.velocity[2];   //<-----------------
-    double v_rr = - msg.velocity[3];
+    double v_fr = msg.velocity[2];   // there is physical mirror effect
+    double v_rr = msg.velocity[3];
 
     double v_left  = (v_fl + v_rl) / 2.0;
     double v_right = (v_fr + v_rr) / 2.0;
