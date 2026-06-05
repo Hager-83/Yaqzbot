@@ -175,10 +175,10 @@
 
   <!-- ================= WHEELS ================= -->
 
-  <xacro:wheel name="front_left"  x_sign=" 1" y_sign=" 1"/>
-  <xacro:wheel name="front_right" x_sign=" 1" y_sign="-1"/>
-  <xacro:wheel name="rear_left"   x_sign="-1" y_sign=" 1"/>
-  <xacro:wheel name="rear_right"  x_sign="-1" y_sign="-1"/>
+  <xacro:wheel name="fl"   x_sign=" 1" y_sign=" 1"/>
+  <xacro:wheel name="rl"   x_sign="-1" y_sign=" 1"/>
+  <xacro:wheel name="fr"   x_sign=" 1" y_sign="-1"/>
+  <xacro:wheel name="rr"   x_sign="-1" y_sign="-1"/>
 
 
   <!-- ================= IMU ================= -->
@@ -221,4 +221,5 @@
   </joint>
 
 </robot>
+
 

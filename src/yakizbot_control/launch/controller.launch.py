@@ -4,9 +4,15 @@ controller.launch.py
 Launches:
 
 1. Robot State Publisher
-2. Joint State Bridge 
-3. wheel_odom_node
-4. simple_controller
+2. simple_controller
+
+Flow:
+
+joint_states
+    ↓
+robot_state_publisher → TF for wheels
+    ↓
+simple_controller → odom + odom TF
 """
 
 import os
@@ -61,21 +67,11 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'robot_description': robot_description},
-            {'use_sim_time': use_sim_time}
+            {'use_sim_time': use_sim_time},
+            {'publish_frequency': 50.0},    
+              
         ]
     )
-    
-
-    # ─────────────────────────────
-    # ADD: Joint State Bridge (IMPORTANT)
-    # ─────────────────────────────
-    joint_state_bridge = Node(
-        package='yakizbot_bringup',
-        executable='joint_state_bridge',
-        name='joint_state_bridge',
-        output='screen'
-    )
-
 
     # ─────────────────────────────
     # Simple Controller
@@ -88,7 +84,8 @@ def generate_launch_description():
         parameters=[
         {
             "wheel_radius": wheel_radius,
-            "wheel_separation": wheel_separation
+            "wheel_separation": wheel_separation,
+            "use_sim_time": use_sim_time
         }
 ]   
     )
@@ -98,6 +95,5 @@ def generate_launch_description():
         wheel_radius_arg,
         wheel_separation_arg,
         robot_state_publisher,
-        joint_state_bridge,   
         simple_controller
     ])
