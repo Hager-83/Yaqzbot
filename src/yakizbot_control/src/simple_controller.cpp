@@ -22,7 +22,7 @@ SimpleController::SimpleController(const std::string& name)
         std::bind(&SimpleController::jointStateCallback, this, _1));
 
     // Odometry publisher
-    odom_pub_ = create_publisher<nav_msgs::msg::Odometry>("/odom", 10);
+    odom_pub_ = create_publisher<nav_msgs::msg::Odometry>("/wheel_odom", 10);
 
     // TF broadcaster
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -85,21 +85,15 @@ void SimpleController::jointStateCallback(
     odom.twist.twist.linear.x = v_s;
     odom.twist.twist.angular.z = v_theta;
 
+
+    odom.twist.covariance[0]  = 0.05;  // vx
+    odom.twist.covariance[35] = 0.1;   // vyaw
+    odom.pose.covariance[0]   = 0.05;  // x
+    odom.pose.covariance[7]   = 0.05;  // y
+    odom.pose.covariance[35]  = 0.1;   // yaw
+
     odom_pub_->publish(odom);
 
-    // ==========================================
-    // Publish TF (odom -> base_footprint)
-    // ==========================================
-    geometry_msgs::msg::TransformStamped tf;
-    tf.header.stamp = now;
-    tf.header.frame_id = "odom";   
-    tf.child_frame_id = "base_footprint";
-
-    tf.transform.translation.x = x_;
-    tf.transform.translation.y = y_;
-    tf.transform.rotation = odom.pose.pose.orientation;
-
-    tf_broadcaster_->sendTransform(tf);
 
     /*
     RCLCPP_INFO(this->get_logger(),

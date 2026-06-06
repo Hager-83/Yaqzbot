@@ -76,23 +76,6 @@ def generate_launch_description():
     )
     
     # =========================
-    # EKF Localization
-    # =========================
-    robot_localization_node = Node(
-        package="robot_localization",
-        executable="ekf_node",
-        name="ekf_filter_node",
-        output="screen",
-        parameters=[
-            os.path.join(
-                get_package_share_directory("yakizbot_localization"),
-                "config",
-                "ekf.yaml"
-            )
-        ]
-    )
-
-    # =========================
     # IMU Filter (Madgwick)
     # =========================
 
@@ -113,7 +96,24 @@ def generate_launch_description():
             ("imu/data", "/imu/data_filtered")
 ]
 )
-    
+
+    # =========================
+    # EKF Localization
+    # =========================
+    robot_localization_node = Node(
+        package="robot_localization",
+        executable="ekf_node",
+        name="ekf_filter_node",
+        output="screen",
+        parameters=[
+            os.path.join(
+                get_package_share_directory("yakizbot_localization"),
+                "config",
+                "ekf.yaml"
+            )
+        ]
+    )
+
     # =========================
     # RViz
     # =========================
