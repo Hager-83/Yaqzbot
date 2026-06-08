@@ -1,0 +1,23 @@
+kinect_ros2_node:
+  ros__parameters:
+    # --- Depth stream (required for laser scan) ---
+    depth_enabled:     true
+    depth_width:       640
+    depth_height:      480
+    depth_fps:         15
+
+    # --- RGB stream (optional) ---
+    rgb_enabled:       true
+    rgb_width:         640
+    rgb_height:        480
+    rgb_fps:           15
+
+    # --- Frames (must match your URDF) ---
+    base_frame:        kinect_link
+    depth_frame:       kinect_depth
+
+    # --- Topics ---
+    depth_topic:       depth/image_raw
+    depth_info_topic:  depth/camera_info
+    rgb_topic:         rgb/image_raw
+    rgb_info_topic:    rgb/camera_info

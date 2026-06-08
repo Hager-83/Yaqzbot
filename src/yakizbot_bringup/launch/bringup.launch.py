@@ -3,12 +3,13 @@ from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 
 from launch_ros.actions import Node
-
 from ament_index_python.packages import get_package_share_directory
 
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+
 import os
-import xacro
- 
+import xacro   # FIX: required for proper parsing
 
 
 def generate_launch_description():
@@ -36,12 +37,14 @@ def generate_launch_description():
     wheel_separation = LaunchConfiguration("wheel_separation")
 
     # =========================
-    # Robot Description (URDF)
+    # Robot Description (URDF) FIXED
     # =========================
     pkg_path = get_package_share_directory("yakizbot_description")
     xacro_file = os.path.join(pkg_path, "urdf", "yakizbot.urdf.xacro")
 
-    robot_description = xacro.process_file(xacro_file).toxml()
+    # FIX: safer xacro processing (prevents silent RViz failure)
+    robot_description_config = xacro.process_file(xacro_file)
+    robot_description = {"robot_description": robot_description_config.toxml()}
 
     # =========================
     # Robot State Publisher
@@ -52,8 +55,8 @@ def generate_launch_description():
         name="robot_state_publisher",
         output="screen",
         parameters=[
+            robot_description,
             {
-                "robot_description": robot_description,
                 "use_sim_time": use_sim_time,
                 "publish_frequency": 50.0
             }
@@ -74,28 +77,27 @@ def generate_launch_description():
             "use_sim_time": use_sim_time
         }]
     )
-    
+
     # =========================
     # IMU Filter (Madgwick)
     # =========================
-
     imu_filter_node = Node(
         package="imu_filter_madgwick",
         executable="imu_filter_madgwick_node",
         name="imu_filter_madgwick",
         output="screen",
         parameters=[{
-        "use_mag": False,
-        "world_frame": "enu",
-        "publish_tf": False,
-        "gain": 0.1,
-        "use_sim_time": use_sim_time
+            "use_mag": False,
+            "world_frame": "enu",
+            "publish_tf": False,
+            "gain": 0.1,
+            "use_sim_time": use_sim_time
         }],
         remappings=[
             ("imu/data_raw", "/imu/data"),
             ("imu/data", "/imu/data_filtered")
-]
-)
+        ]
+    )
 
     # =========================
     # EKF Localization
@@ -110,8 +112,22 @@ def generate_launch_description():
                 get_package_share_directory("yakizbot_localization"),
                 "config",
                 "ekf.yaml"
-            )
+            ),
+            {"use_sim_time": use_sim_time}                        # FIX
         ]
+    )
+
+    # =========================
+    # SLAM Launch Include
+    # =========================
+    slam_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("yakizbot_mapping"),
+                "launch",
+                "kinect_slam.launch.py"
+            )
+        )
     )
 
     # =========================
@@ -131,8 +147,6 @@ def generate_launch_description():
         arguments=["-d", rviz_config]
     )
 
-
-
     # =========================
     # Launch
     # =========================
@@ -144,5 +158,6 @@ def generate_launch_description():
         simple_controller,
         imu_filter_node,
         robot_localization_node,
+        slam_launch,
         rviz_node
     ])
