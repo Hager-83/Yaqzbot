@@ -13,9 +13,15 @@
   <xacro:property name="track" value="0.28"/>
   <xacro:property name="wheelbase" value="0.15"/>
 
+  <!-- Kinect 1 real dimensions: 9.8in wide x 3in tall x 3in deep -->
+  <xacro:property name="kinect_w" value="0.249"/>  <!-- 9.8 in → m -->
+  <xacro:property name="kinect_h" value="0.076"/>  <!-- 3.0 in → m -->
+  <xacro:property name="kinect_d" value="0.076"/>  <!-- 3.0 in → m -->
+
   <!-- ================= MATERIALS ================= -->
-  <material name="blue"><color rgba="0 0 1 1"/></material>
   <material name="black"><color rgba="0 0 0 1"/></material>
+  <material name="blue"><color rgba="0 0 1 1"/></material>
+  <material name="green"><color rgba="0 0.8 0 1"/></material>
   <material name="silver"><color rgba="0.79 0.82 0.93 1"/></material>
 
   <!-- ================= BASE ================= -->
@@ -42,7 +48,7 @@
     <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
   </joint>
 
-  <!-- ================= WHEELS (unchanged logic) ================= -->
+  <!-- ================= WHEELS ================= -->
   <xacro:macro name="wheel" params="name x_sign y_sign">
     <link name="${name}_wheel"/>
     <joint name="${name}_wheel_joint" type="continuous">
@@ -67,41 +73,61 @@
   </joint>
 
   <!-- ================================================= -->
-  <!-- ================= KINECT FIX ================= -->
+  <!-- ================= KINECT (XBOX 360) ================= -->
+  <!--                                                       -->
+  <!--  Mounted centered (Y=0) between FL & FR wheels,       -->
+  <!--  sitting on top of the base_link.                     -->
+  <!--  X=0  →  centred front-to-back                        -->
+  <!--  Z = base_height/2 + kinect_h/2  →  rests on top      -->
   <!-- ================================================= -->
 
   <!-- Physical camera body -->
   <link name="kinect_link">
     <visual>
       <geometry>
-        <box size="0.28 0.08 0.07"/>
+        <box size="${kinect_d} ${kinect_w} ${kinect_h}"/>
+        <!-- x=depth, y=width, z=height so the bar lies across the robot -->
       </geometry>
-      <material name="blue"/>
+      <material name="green"/>
     </visual>
-
     <collision>
       <geometry>
-        <box size="0.28 0.08 0.07"/>
+        <box size="${kinect_d} ${kinect_w} ${kinect_h}"/>
       </geometry>
     </collision>
   </link>
 
-  <!-- FIX: only ONE mount transform -->
+  <!-- Mount: centered between FL & FR, sitting on top of base -->
   <joint name="kinect_joint" type="fixed">
     <parent link="base_link"/>
     <child link="kinect_link"/>
-    <origin xyz="0.15 0 0.25" rpy="0 0 0"/>
+    <origin xyz="${base_length/4} 0 ${base_height/2 + kinect_h/2}" rpy="0 0 0"/>
   </joint>
 
-  <!-- Depth frame (sensor optical frame) -->
-  <link name="kinect_depth"/>
+  <!-- Sensor origin (depth sensor centre) -->
+  <!-- Kinect 1 depth sensor is slightly left of centre (~2 cm).      -->
+  <!-- Kept at (0,0,0) relative to kinect_link for simplicity;        -->
+  <!-- adjust x/y if you need sub-centimetre accuracy.                -->
 
+  <link name="kinect_depth"/>
   <joint name="kinect_depth_joint" type="fixed">
     <parent link="kinect_link"/>
     <child link="kinect_depth"/>
-
-    <!-- FIX: must be identity transform (no offset) -->
     <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Optical frame (ROS convention)  -->
+  <!--  Standard ROS camera optical frame:                             -->
+  <!--    Z  points forward  (into the scene)                         -->
+  <!--    Y  points downward                                           -->
+  <!--    X  points right                                              -->
+  <!--  Achieved by rpy = (-π/2, 0, -π/2) from the URDF body frame.  -->
+  
+  <link name="kinect_depth_optical_frame"/>
+  <joint name="kinect_depth_optical_joint" type="fixed">
+    <parent link="kinect_depth"/>
+    <child link="kinect_depth_optical_frame"/>
+    <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
   </joint>
 
 </robot>

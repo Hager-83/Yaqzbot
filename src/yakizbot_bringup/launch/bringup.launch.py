@@ -19,7 +19,7 @@ def generate_launch_description():
     # =========================
     use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
-        default_value="False"
+        default_value="false"
     )
 
     wheel_radius_arg = DeclareLaunchArgument(
@@ -120,15 +120,29 @@ def generate_launch_description():
     # =========================
     # SLAM Launch Include
     # =========================
+    kinect_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("yakizbot_mapping"),
+                "launch",
+                "kinect.launch.py"
+            )
+        )
+    )
+
     slam_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory("yakizbot_mapping"),
                 "launch",
-                "kinect_slam.launch.py"
+                "slam.launch.py"
             )
-        )
+        ),
+        launch_arguments={
+            "use_sim_time": use_sim_time
+        }.items()
     )
+
 
     # =========================
     # RViz
@@ -158,6 +172,7 @@ def generate_launch_description():
         simple_controller,
         imu_filter_node,
         robot_localization_node,
+        kinect_launch,
         slam_launch,
         rviz_node
     ])

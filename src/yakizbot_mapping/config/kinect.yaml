@@ -1,8 +1,0 @@
-kinect_node:
-  ros__parameters:
-    camera_name: rgb_camera
-    frame_id: camera_link
-    image_width: 640
-    image_height: 480
-    pixel_format: rgb8
-    fps: 30
