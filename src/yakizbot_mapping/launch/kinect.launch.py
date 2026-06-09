@@ -33,7 +33,7 @@ def generate_launch_description():
         'scan_height': 1,
         'range_min': 0.45,
         'range_max': 4.0,
-        'output_frame': 'kinect_depth_optical_frame',
+        'output_frame': 'base_footprint',
         'use_sim_time': use_sim_time, 
     }],
     remappings=[
