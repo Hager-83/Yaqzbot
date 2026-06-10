@@ -1,0 +1,65 @@
+# Place this file in: yakizbot_localization/config/amcl.yaml
+amcl:
+  ros__parameters:
+    use_sim_time: False
+
+    # ================== Frames ==================
+    base_frame_id: "base_footprint"
+    global_frame_id: "map"
+    odom_frame_id: "odom"
+
+    # ================== Motion Model ==================
+    robot_model_type: "nav2_amcl::DifferentialMotionModel"
+    alpha1: 0.25
+    alpha2: 0.25
+    alpha3: 0.25
+    alpha4: 0.25
+
+    # ================== Likelihood Field Laser Model ==================
+    laser_model_type: "likelihood_field"
+    laser_max_range: 4.5
+    laser_min_range: 0.45
+    laser_likelihood_max_dist: 1.5
+    max_beams: 50
+    sigma_hit: 0.4
+
+    # ================== Mixture Weights ==================
+    z_hit:   0.65
+    z_rand:  0.3
+    z_max:   0.05
+    z_short: 0.05
+
+    # ================== Particle Filter ==================
+    min_particles:     600
+    max_particles:     2500
+    resample_interval: 1
+    pf_err: 0.05
+    pf_z:   0.99
+
+    # ================== Update Control ==================
+    update_min_d: 0.15
+    update_min_a: 0.15
+
+    # ================== Recovery ==================
+    recovery_alpha_fast: 0.1
+    recovery_alpha_slow: 0.001
+
+    # ================== Others ==================
+    tf_broadcast:        true
+    transform_tolerance: 1.0
+    save_pose_rate:      0.5
+
+    scan_topic: /scan
+
+    beam_skip_distance:        0.5
+    beam_skip_error_threshold: 0.9
+    beam_skip_threshold:       0.3
+    do_beamskip:               true
+
+    # ================== Initial Pose ==================
+    set_initial_pose: true
+    initial_pose:
+      x:   0.0
+      y:   0.0
+      z:   0.0
+      yaw: 0.0

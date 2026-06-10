@@ -8,6 +8,9 @@ from ament_index_python.packages import get_package_share_directory
 from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
+from launch.conditions import IfCondition, UnlessCondition
+
+
 import os
 import xacro   # FIX: required for proper parsing
 
@@ -21,6 +24,21 @@ def generate_launch_description():
         "use_sim_time",
         default_value="false"
     )
+
+    use_slam = LaunchConfiguration("use_slam")
+
+    use_slam_arg = DeclareLaunchArgument(
+        "use_slam",
+        default_value="false"
+    )
+
+    map_name_arg = DeclareLaunchArgument(
+    "map_name",
+    default_value="house"
+    )
+
+    map_name = LaunchConfiguration("map_name")
+
 
     wheel_radius_arg = DeclareLaunchArgument(
         "wheel_radius",
@@ -66,7 +84,7 @@ def generate_launch_description():
     # =========================
     # Simple Controller
     # =========================
-    simple_controller = Node(
+    wheel_controller_node = Node(
         package="yakizbot_control",
         executable="simple_controller",
         name="simple_controller",
@@ -102,7 +120,7 @@ def generate_launch_description():
     # =========================
     # EKF Localization
     # =========================
-    robot_localization_node = Node(
+    controller_node = Node(
         package="robot_localization",
         executable="ekf_node",
         name="ekf_filter_node",
@@ -117,10 +135,22 @@ def generate_launch_description():
         ]
     )
 
+    localization_node = IncludeLaunchDescription(
+    PythonLaunchDescriptionSource(
+        os.path.join(
+            get_package_share_directory("yakizbot_localization"),
+            "launch",
+            "global_localization.launch.py"
+        )
+    ),
+    condition=UnlessCondition(use_slam),
+    launch_arguments={"map_name": map_name}.items()
+    )
+
     # =========================
     # SLAM Launch Include
     # =========================
-    kinect_launch = IncludeLaunchDescription(
+    kinect_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory("yakizbot_mapping"),
@@ -130,7 +160,7 @@ def generate_launch_description():
         )
     )
 
-    slam_launch = IncludeLaunchDescription(
+    slam_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
                 get_package_share_directory("yakizbot_mapping"),
@@ -140,7 +170,8 @@ def generate_launch_description():
         ),
         launch_arguments={
             "use_sim_time": use_sim_time
-        }.items()
+        }.items(),
+        condition=IfCondition(use_slam)
     )
 
 
@@ -166,13 +197,16 @@ def generate_launch_description():
     # =========================
     return LaunchDescription([
         use_sim_time_arg,
+        use_slam_arg,
+        map_name_arg,
         wheel_radius_arg,
         wheel_separation_arg,
         robot_state_publisher,
-        simple_controller,
+        wheel_controller_node,
         imu_filter_node,
-        robot_localization_node,
-        kinect_launch,
-        slam_launch,
+        controller_node,
+        localization_node,
+        kinect_node,
+        slam_node,
         rviz_node
     ])
