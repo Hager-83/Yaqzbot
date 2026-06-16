@@ -147,9 +147,7 @@ def generate_launch_description():
     launch_arguments={"map_name": map_name}.items()
     )
 
-    # =========================
-    # SLAM Launch Include
-    # =========================
+    
     kinect_node = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(
@@ -169,7 +167,8 @@ def generate_launch_description():
             )
         ),
         launch_arguments={
-            "use_sim_time": use_sim_time
+            "use_sim_time": use_sim_time,
+            "map_name": map_name
         }.items(),
         condition=IfCondition(use_slam)
     )

@@ -4,6 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
+from launch.actions import TimerAction
 
 
 def generate_launch_description():
@@ -16,6 +17,12 @@ def generate_launch_description():
     use_sim_time_arg = DeclareLaunchArgument(
         "use_sim_time",
         default_value="false"
+    )
+
+    map_name_arg = DeclareLaunchArgument(
+        "map_name",
+        default_value="house",
+        description="Name to use when saving the map"
     )
 
     slam_config_arg = DeclareLaunchArgument(
@@ -66,8 +73,9 @@ def generate_launch_description():
 
     return LaunchDescription([
         use_sim_time_arg,
+        map_name_arg,
         slam_config_arg,
         nav2_map_saver,
         slam_toolbox,
-        nav2_lifecycle_manager
+        TimerAction(period=5.0, actions=[nav2_lifecycle_manager])
     ])
