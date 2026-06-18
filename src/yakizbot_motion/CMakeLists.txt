@@ -5,7 +5,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
- 
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -37,12 +36,12 @@ set(dependencies
 add_library(pure_pursuit SHARED src/pure_pursuit.cpp)
 ament_target_dependencies(pure_pursuit ${dependencies})
 
-pluginlib_export_plugin_description_file(nav2_core motion_planner_plugin.xml)
-
 target_include_directories(pure_pursuit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
+
+pluginlib_export_plugin_description_file(nav2_core motion_planner_plugin.xml)
 
 install(TARGETS
   pure_pursuit

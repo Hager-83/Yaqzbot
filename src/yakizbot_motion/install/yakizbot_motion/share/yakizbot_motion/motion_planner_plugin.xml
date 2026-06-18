@@ -1,0 +1,7 @@
+<class_libraries>
+	<library path="pure_pursuit">
+		<class type="yakizbot_motion::PurePursuit" base_class_type="nav2_core::Controller">
+		  <description>Pure Pursuit Motion Planner.</description>
+		</class>
+	</library>
+</class_libraries>
