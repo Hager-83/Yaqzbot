@@ -1,0 +1,17 @@
+digraph G {
+"base_link" -> "fl_wheel"[label=" Broadcaster: default_authority\nAverage rate: 20.294\nBuffer length: 3.4\nMost recent transform: 1781740918.129\nOldest transform: 1781740914.729\n"];
+"base_footprint" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "fr_wheel"[label=" Broadcaster: default_authority\nAverage rate: 20.294\nBuffer length: 3.4\nMost recent transform: 1781740918.129\nOldest transform: 1781740914.729\n"];
+"base_link" -> "rl_wheel"[label=" Broadcaster: default_authority\nAverage rate: 20.294\nBuffer length: 3.4\nMost recent transform: 1781740918.129\nOldest transform: 1781740914.729\n"];
+"base_link" -> "rr_wheel"[label=" Broadcaster: default_authority\nAverage rate: 20.294\nBuffer length: 3.4\nMost recent transform: 1781740918.129\nOldest transform: 1781740914.729\n"];
+"odom" -> "base_footprint"[label=" Broadcaster: default_authority\nAverage rate: 10.304\nBuffer length: 3.3\nMost recent transform: 1781740918.046706\nOldest transform: 1781740914.746915\n"];
+"base_link" -> "imu_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"kinect_link" -> "kinect_depth"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"base_link" -> "kinect_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"kinect_depth" -> "kinect_depth_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 24.624\nBuffer length: 3.371\nMost recent transform: 1781740918.336187\nOldest transform: 1781740914.965431\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1781740918.1542783"[ shape=plaintext ] ;
+}->"map";
+}

@@ -64,7 +64,7 @@ bool AStarPlanner::inBounds(const GraphNode &n)
 
 double AStarPlanner::heuristic(const GraphNode &a, const GraphNode &b)
 {
-    // Diagonal (Chebyshev) heuristic — أحسن من Euclidean مع 8-connectivity
+    
     int dx = std::abs(a.x - b.x);
     int dy = std::abs(a.y - b.y);
     return std::max(dx, dy) + (std::sqrt(2.0) - 1.0) * std::min(dx, dy);
