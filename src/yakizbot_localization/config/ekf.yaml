@@ -14,9 +14,6 @@ ekf_filter_node:
     base_link_frame: base_footprint
     world_frame: odom
 
-    # ==================
-    # Encoder Odometry
-    # ==================
     # ==========================================================
     # ENCODER ODOMETRY CONFIGURATION
     # ==========================================================
@@ -48,10 +45,6 @@ ekf_filter_node:
 
     odom0_differential: false
     odom0_relative: false
-
-    # ==================
-    # IMU
-    # ==================
 
     # ==========================================================
     # IMU SENSOR CONFIGURATION

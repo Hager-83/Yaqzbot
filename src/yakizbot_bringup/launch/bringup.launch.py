@@ -173,6 +173,19 @@ def generate_launch_description():
         condition=IfCondition(use_slam)
     )
 
+    # =========================
+    # NAVIGATION 
+    # =========================
+    #navigation_node = IncludeLaunchDescription(
+    #    PythonLaunchDescriptionSource(
+    #        os.path.join(
+    #            get_package_share_directory("yakizbot_navigation"),
+    #            "launch",
+    #            "navigation.launch.py"
+    #        )
+    #    ),
+    #)
+
 
     # =========================
     # RViz
@@ -207,5 +220,6 @@ def generate_launch_description():
         localization_node,
         kinect_node,
         slam_node,
+        #navigation_node,
         rviz_node
     ])

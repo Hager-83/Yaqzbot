@@ -1,192 +1,152 @@
-#include "yakizbot_motion/pure_pursuit.hpp"
+#include <algorithm>
+
 #include "nav2_util/node_utils.hpp"
 #include "tf2/utils.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include <algorithm>
+#include "yakizbot_motion/pure_pursuit.hpp"
 
 namespace yakizbot_motion
 {
-
 void PurePursuit::configure(
   const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-  std::string name,
-  std::shared_ptr<tf2_ros::Buffer> tf_buffer,
+  std::string name, std::shared_ptr<tf2_ros::Buffer> tf_buffer,
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
   node_ = parent;
+
   auto node = node_.lock();
+
   costmap_ros_ = costmap_ros;
-  costmap_ = costmap_ros_->getCostmap();
   tf_buffer_ = tf_buffer;
   plugin_name_ = name;
   logger_ = node->get_logger();
   clock_ = node->get_clock();
 
-  nav2_util::declare_parameter_if_not_declared(node, plugin_name_ + ".look_ahead_distance", rclcpp::ParameterValue(0.6));
-  nav2_util::declare_parameter_if_not_declared(node, plugin_name_ + ".max_linear_velocity", rclcpp::ParameterValue(0.35));
-  nav2_util::declare_parameter_if_not_declared(node, plugin_name_ + ".max_angular_velocity", rclcpp::ParameterValue(1.2));
-  nav2_util::declare_parameter_if_not_declared(node, plugin_name_ + ".min_linear_velocity", rclcpp::ParameterValue(0.1));
-  nav2_util::declare_parameter_if_not_declared(node, plugin_name_ + ".goal_slow_distance", rclcpp::ParameterValue(0.4));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".look_ahead_distance",
+    rclcpp::ParameterValue(0.5));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_linear_velocity",
+    rclcpp::ParameterValue(0.3));
+  nav2_util::declare_parameter_if_not_declared(
+    node, plugin_name_ + ".max_angular_velocity",
+    rclcpp::ParameterValue(1.0));
 
   node->get_parameter(plugin_name_ + ".look_ahead_distance", look_ahead_distance_);
   node->get_parameter(plugin_name_ + ".max_linear_velocity", max_linear_velocity_);
   node->get_parameter(plugin_name_ + ".max_angular_velocity", max_angular_velocity_);
-  node->get_parameter(plugin_name_ + ".min_linear_velocity", min_linear_velocity_);
-  node->get_parameter(plugin_name_ + ".goal_slow_distance", goal_slow_distance_);
 
   carrot_pub_ = node->create_publisher<geometry_msgs::msg::PoseStamped>("pure_pursuit/carrot", 1);
-
-  RCLCPP_INFO(logger_, "PurePursuit configured successfully - Yakizbot Graduation Project");
 }
 
-void PurePursuit::cleanup() { carrot_pub_.reset(); }
-void PurePursuit::activate() { carrot_pub_->on_activate(); }
-void PurePursuit::deactivate() { carrot_pub_->on_deactivate(); }
-
-void PurePursuit::setPlan(const nav_msgs::msg::Path & path)
+void PurePursuit::cleanup()
 {
-  global_plan_ = path;
-  RCLCPP_INFO(logger_, "New plan received with %zu poses", path.poses.size());
+  RCLCPP_INFO(logger_, "Cleaning up PurePursuit");
+  carrot_pub_.reset();
 }
 
-void PurePursuit::setSpeedLimit(const double & speed_limit, const bool & percentage)
+void PurePursuit::activate()
 {
-  current_speed_limit_ = speed_limit;
-  use_speed_limit_percentage_ = percentage;
-  RCLCPP_INFO(logger_, "Speed limit updated: %.2f %s", 
-              speed_limit, percentage ? "(percentage)" : "(absolute)");
+  RCLCPP_INFO(logger_, "Activating PurePursuit");
+  carrot_pub_->on_activate();
+}
+
+void PurePursuit::deactivate()
+{
+  RCLCPP_INFO(logger_, "Deactivating PurePursuit");
+  carrot_pub_->on_deactivate();
 }
 
 geometry_msgs::msg::TwistStamped PurePursuit::computeVelocityCommands(
   const geometry_msgs::msg::PoseStamped & robot_pose,
   const geometry_msgs::msg::Twist &,
-  nav2_core::GoalChecker * goal_checker)
+  nav2_core::GoalChecker *)
 {
+  auto node = node_.lock();
   geometry_msgs::msg::TwistStamped cmd_vel;
   cmd_vel.header.frame_id = robot_pose.header.frame_id;
-  cmd_vel.header.stamp = clock_->now();
 
-  if (global_plan_.poses.empty()) {
-    RCLCPP_WARN_THROTTLE(logger_, *clock_, 1000, "Empty global plan!");
+  if(global_plan_.poses.empty()){
+    RCLCPP_ERROR(logger_, "Empty Plan!");
     return cmd_vel;
   }
 
-  if (!transformPlan(robot_pose.header.frame_id)) {
-    RCLCPP_ERROR(logger_, "Failed to transform plan to robot frame");
+  if(!transformPlan(robot_pose.header.frame_id)){
+    RCLCPP_ERROR(logger_, "Unable to transform Plan in robot's frame");
     return cmd_vel;
-  }
-
-  // Collision checking using local costmap
-  if (isCollisionAhead(robot_pose)) {
-    RCLCPP_WARN_THROTTLE(logger_, *clock_, 500, "Collision ahead! Stopping.");
-    return cmd_vel;  // zero velocity
   }
 
   auto carrot_pose = getCarrotPose(robot_pose);
   carrot_pub_->publish(carrot_pose);
-
-  tf2::Transform robot_tf, carrot_tf, carrot_in_robot;
+        
+  // Calculate the curvature to the look-ahead point
+  tf2::Transform carrot_pose_robot_tf, robot_tf, carrot_pose_tf;
   tf2::fromMsg(robot_pose.pose, robot_tf);
-  tf2::fromMsg(carrot_pose.pose, carrot_tf);
-  carrot_in_robot = robot_tf.inverse() * carrot_tf;
-
-  double curvature = getCurvature(carrot_in_robot.getOrigin());
-
-  // ==================== Speed Control ====================
-  double linear_vel = getSpeedFromCurvature(curvature);
-
-  // Goal slowing
-  double dist_to_goal = std::hypot(
-    global_plan_.poses.back().pose.position.x - robot_pose.pose.position.x,
-    global_plan_.poses.back().pose.position.y - robot_pose.pose.position.y);
-
-  if (dist_to_goal < goal_slow_distance_) {
-    double slow_factor = dist_to_goal / goal_slow_distance_;
-    linear_vel = std::max(min_linear_velocity_, linear_vel * slow_factor);
-    RCLCPP_INFO_THROTTLE(logger_, *clock_, 1000, "Goal slowing active: %.2f m left", dist_to_goal);
-  }
-
-  // Apply speed limit
-  if (use_speed_limit_percentage_) {
-    linear_vel *= (current_speed_limit_ / 100.0);
-  } else {
-    linear_vel = std::min(linear_vel, current_speed_limit_);
-  }
-
-  cmd_vel.twist.linear.x = linear_vel;
+  tf2::fromMsg(carrot_pose.pose, carrot_pose_tf);
+  carrot_pose_robot_tf = robot_tf.inverse() * carrot_pose_tf;
+  tf2::toMsg(carrot_pose_robot_tf, carrot_pose.pose);
+  double curvature = getCurvature(carrot_pose.pose);
+        
+  // Create and publish the velocity command
+  cmd_vel.twist.linear.x = max_linear_velocity_;
   cmd_vel.twist.angular.z = curvature * max_angular_velocity_;
-
-  RCLCPP_DEBUG(logger_, "Cmd: lin=%.3f, ang=%.3f, curv=%.3f", 
-               linear_vel, cmd_vel.twist.angular.z, curvature);
 
   return cmd_vel;
 }
 
-// ==================== Helper Functions ====================
-
-double PurePursuit::getSpeedFromCurvature(double curvature)
+void PurePursuit::setPlan(const nav_msgs::msg::Path & path)
 {
-  // Reduce speed on sharp turns
-  double abs_curv = std::abs(curvature);
-  if (abs_curv > 1.5) return max_linear_velocity_ * 0.4;
-  if (abs_curv > 0.8) return max_linear_velocity_ * 0.65;
-  if (abs_curv > 0.4) return max_linear_velocity_ * 0.85;
-  return max_linear_velocity_;
+  RCLCPP_INFO_STREAM(logger_, "Path received with " << path.poses.size() << " poses");
+  RCLCPP_INFO_STREAM(logger_, "Path frame " << path.header.frame_id);
+  global_plan_ = path;
 }
 
-bool PurePursuit::isCollisionAhead(const geometry_msgs::msg::PoseStamped & robot_pose)
-{
-  if (!costmap_) return false;
-
-  int check_count = std::min(10, (int)global_plan_.poses.size());
-  
-  for (int i = 0; i < check_count; i++) {
-    unsigned int mx, my;
-    const auto & pose = global_plan_.poses[i];
-    if (!costmap_->worldToMap(pose.pose.position.x, pose.pose.position.y, mx, my)) continue;
-    unsigned char cost = costmap_->getCost(mx, my);
-    if (cost >= nav2_costmap_2d::INSCRIBED_INFLATED_OBSTACLE) {
-      return true;
-    }
-  }
-  return false;
-}
+void PurePursuit::setSpeedLimit(const double &, const bool &){}
 
 geometry_msgs::msg::PoseStamped PurePursuit::getCarrotPose(const geometry_msgs::msg::PoseStamped & robot_pose)
 {
-  geometry_msgs::msg::PoseStamped carrot = global_plan_.poses.back();
-  for (auto it = global_plan_.poses.rbegin(); it != global_plan_.poses.rend(); ++it) {
-    double dx = it->pose.position.x - robot_pose.pose.position.x;
-    double dy = it->pose.position.y - robot_pose.pose.position.y;
-    if (std::hypot(dx, dy) > look_ahead_distance_) {
-      carrot = *it;
+  geometry_msgs::msg::PoseStamped carrot_pose = global_plan_.poses.back();
+  for (auto pose_it = global_plan_.poses.rbegin(); pose_it != global_plan_.poses.rend(); ++pose_it) {
+    double dx = pose_it->pose.position.x - robot_pose.pose.position.x;
+    double dy = pose_it->pose.position.y - robot_pose.pose.position.y;
+    double distance = std::sqrt(dx * dx + dy * dy);
+    if(distance > look_ahead_distance_){
+      carrot_pose = *pose_it;
+    } else {
       break;
     }
   }
-  return carrot;
+  return carrot_pose;
 }
 
-double PurePursuit::getCurvature(const tf2::Vector3 & carrot_in_robot)
+double PurePursuit::getCurvature(const geometry_msgs::msg::Pose & carrot_pose)
 {
-  double dx = carrot_in_robot.x();
-  double dy = carrot_in_robot.y();
-  double dist_sq = dx*dx + dy*dy;
-  return (dist_sq > 0.001) ? (2.0 * dy / dist_sq) : 0.0;
+  const double carrot_dist =
+  (carrot_pose.position.x * carrot_pose.position.x) +
+  (carrot_pose.position.y * carrot_pose.position.y);
+    
+  // Find curvature of circle (k = 1 / R)
+  if (carrot_dist > 0.001) {
+    return 2.0 * carrot_pose.position.y / carrot_dist;
+  } else {
+    return 0.0;
+  }
 }
 
 bool PurePursuit::transformPlan(const std::string & frame)
 {
-  if (global_plan_.header.frame_id == frame) return true;
-
+  if(global_plan_.header.frame_id == frame){
+    return true;
+  }
   geometry_msgs::msg::TransformStamped transform;
-  try {
+  try{
     transform = tf_buffer_->lookupTransform(frame, global_plan_.header.frame_id, tf2::TimePointZero);
-  } catch (const tf2::TransformException & ex) {
-    RCLCPP_ERROR(logger_, "Transform failed: %s", ex.what());
+  } catch (tf2::ExtrapolationException & ex) {
+    RCLCPP_ERROR_STREAM(logger_, "Couldn't transform plan from frame " <<
+      global_plan_.header.frame_id << " to frame " << frame);
     return false;
   }
-
-  for (auto & pose : global_plan_.poses) {
+  for(auto & pose : global_plan_.poses){
     tf2::doTransform(pose, pose, transform);
   }
   global_plan_.header.frame_id = frame;

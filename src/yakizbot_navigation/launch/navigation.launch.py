@@ -17,10 +17,39 @@ def generate_launch_description():
         "use_sim_time",
         default_value="false"
     )
+
+    #nav2_bt_navigator = Node(
+    #    package="nav2_bt_navigator",
+    #    executable="bt_navigator",
+    #    name="bt_navigator",
+    #    output="screen",
+    #    parameters=[
+    #        os.path.join(
+    #            yakizbot_navigation_pkg,
+    #            "config",
+    #            "bt_navigator.yaml"),
+    #        {"use_sim_time": use_sim_time}
+    #    ],
+    #)
+
+    #nav2_behaviors = Node(
+    #    package="nav2_behaviors",
+    #    executable="behavior_server",
+    #    name="behavior_server",
+    #    output="screen",
+    #    parameters=[
+    #        os.path.join(
+    #            yakizbot_navigation_pkg,
+    #            "config",
+    #            "behavior_server.yaml"),
+    #        {"use_sim_time": use_sim_time}
+    #    ],
+    #)
     
     nav2_controller_server = Node(
         package="nav2_controller",
         executable="controller_server",
+        name="controller_server",
         output="screen",
         parameters=[
             os.path.join(
@@ -44,6 +73,7 @@ def generate_launch_description():
         {"use_sim_time": use_sim_time}
     ]
     )
+
     nav2_smoother_server = Node(
         package="nav2_smoother",
         executable="smoother_server",
@@ -75,5 +105,7 @@ def generate_launch_description():
         nav2_controller_server,
         nav2_planner_server,
         nav2_smoother_server,
+        #nav2_behaviors,
+        #nav2_bt_navigator,
         TimerAction(period=5.0, actions=[nav2_lifecycle_manager])
     ])
