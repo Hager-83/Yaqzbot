@@ -186,13 +186,14 @@ def generate_launch_description():
         ),
     )
 
+
     # =========================
     # RViz
     # =========================
     rviz_config = os.path.join(
-        get_package_share_directory("yakizbot_localization"),
+        get_package_share_directory("nav2_bringup"),
         "rviz",
-        "yakizbot.rviz"
+        "nav2_default_view.rviz"
     )
 
     rviz_node = Node(
