@@ -3,8 +3,8 @@
 <robot name="yakizbot" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- ================= PARAMETERS ================= -->
-  <xacro:property name="base_length" value="0.40"/>
-  <xacro:property name="base_width" value="0.295"/>
+  <xacro:property name="base_length" value="0.295"/>
+  <xacro:property name="base_width" value="0.40"/>
   <xacro:property name="base_height" value="0.20"/>
 
   <xacro:property name="wheel_radius" value="0.0425"/>

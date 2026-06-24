@@ -46,7 +46,7 @@ amcl:
 
     # ================== Others ==================
     tf_broadcast:        true
-    transform_tolerance: 0.3
+    transform_tolerance: 0.5
     save_pose_rate:      0.5
     scan_topic:         /scan
 
