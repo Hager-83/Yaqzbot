@@ -185,7 +185,17 @@ def generate_launch_description():
             )
         ),
     )
-
+    
+    #===========================
+    # IOT_NODE
+    #=========================== 
+    #IOT_node = Node(
+    #package='yakizbot_iot',
+    #executable='mqtt_bridge',
+    #name='mqtt_bridge_node',
+    #output='screen'
+    #)
+    
     # =========================
     # RViz
     # =========================
@@ -220,5 +230,6 @@ def generate_launch_description():
         kinect_node,
         slam_node,
         navigation_node,
+        #IOT_node,
         rviz_node
     ])

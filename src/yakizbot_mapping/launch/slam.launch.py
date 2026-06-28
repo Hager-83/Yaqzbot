@@ -21,7 +21,7 @@ def generate_launch_description():
 
     map_name_arg = DeclareLaunchArgument(
         "map_name",
-        default_value="house",
+        default_value="office",
         description="Name to use when saving the map"
     )
 

@@ -92,5 +92,5 @@ def generate_launch_description():
         amcl_config_arg,
         nav2_map_server,
         nav2_amcl,
-        TimerAction(period=5.0, actions=[nav2_lifecycle_manager])
+        TimerAction(period=3.0, actions=[nav2_lifecycle_manager])
     ])
