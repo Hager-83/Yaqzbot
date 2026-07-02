@@ -107,5 +107,5 @@ def generate_launch_description():
         nav2_smoother_server,
         nav2_behaviors,
         nav2_bt_navigator,
-        TimerAction(period=20.0, actions=[nav2_lifecycle_manager])
+        TimerAction(period=10.0, actions=[nav2_lifecycle_manager])
     ])

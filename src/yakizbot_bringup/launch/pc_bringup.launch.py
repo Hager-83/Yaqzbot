@@ -30,7 +30,7 @@ def generate_launch_description():
 
     map_name_arg = DeclareLaunchArgument(
         "map_name",
-        default_value="office"
+        default_value="house"
     )
 
     use_sim_time = LaunchConfiguration("use_sim_time")
